@@ -131,6 +131,7 @@ class DevoirWebController extends Controller
         }
 
         $devoir->publier();
+        app(\App\Services\NotificationService::class)->notifierNouveauDevoir($devoir);
 
         return back()->with('success', 'Devoir publié avec succès !');
     }

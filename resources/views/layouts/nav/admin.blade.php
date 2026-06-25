@@ -24,3 +24,18 @@
 <a href="{{ route('admin.annees-scolaires') }}" class="nav-item {{ request()->routeIs('admin.annees-scolaires*') ? 'active' : '' }}">
     <i class="bi bi-calendar3"></i> Années scolaires
 </a>
+
+<a href="{{ route('admin.affectations.index') }}"
+   class="nav-item {{ request()->routeIs('admin.affectations*') ? 'active' : '' }}">
+    <i class="bi bi-diagram-2"></i> Affectations
+</a>
+
+<a href="{{ route('admin.eleve-classes.index') }}"
+   class="nav-item {{ request()->routeIs('admin.eleve-classes*') ? 'active' : '' }}">
+    <i class="bi bi-people"></i> Élèves / Classes
+</a>
+
+<a href="{{ route('admin.import-csv.index') }}"
+   class="nav-item {{ request()->routeIs('admin.import-csv*') ? 'active' : '' }}">
+    <i class="bi bi-upload"></i> Import CSV
+</a>

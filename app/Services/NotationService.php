@@ -76,6 +76,8 @@ class NotationService
             });
 
         $this->calculerNote($tentative);
+    app(\App\Services\NotificationService::class)->notifierResultat($resultat_instance);
+    app(\App\Services\NotificationService::class)->notifierCorrectionRequise($tentative->devoir);
 
         EvenementAntitriche::create([
             'tentative_id' => $tentative->id,

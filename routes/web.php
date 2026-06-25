@@ -6,6 +6,31 @@ use App\Http\Controllers\Web\Eleve\DashboardController as EleveDashboard;
 use App\Http\Controllers\Web\Eleve\PassageWebController;
 use App\Http\Controllers\Web\Enseignant\DashboardController as EnseignantDashboard;
 use App\Http\Controllers\Web\Enseignant\DevoirWebController;
+use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuth;
+use App\Http\Controllers\SuperAdmin\TenantController;
+use App\Http\Controllers\Web\PasswordResetController;
+
+
+// Super Admin — accessible sur /superadmin
+Route::prefix('superadmin')->name('superadmin.')->group(function () {
+ 
+    // Auth (public)
+    Route::get('login',  [SuperAdminAuth::class, 'showLogin'])->name('login');
+    Route::post('login', [SuperAdminAuth::class, 'login'])->name('login.post');
+    Route::post('logout',[SuperAdminAuth::class, 'logout'])->name('logout');
+  // Routes protégées
+    Route::middleware('superadmin.auth')->group(function () {
+        Route::get('/',                         [TenantController::class, 'dashboard'])->name('dashboard');
+        Route::post('/tenants',                 [TenantController::class, 'store'])->name('tenants.store');
+        Route::get('/tenants/{id}',             [TenantController::class, 'show'])->name('tenants.show');
+        Route::put('/tenants/{id}',             [TenantController::class, 'update'])->name('tenants.update');
+        Route::patch('/tenants/{id}/toggle',    [TenantController::class, 'toggleActif'])->name('tenants.toggle');
+        Route::post('/tenants/{id}/migrate',    [TenantController::class, 'migrate'])->name('tenants.migrate');
+        Route::delete('/tenants/{id}',          [TenantController::class, 'destroy'])->name('tenants.destroy');
+    });
+});
+ 
+
 
 // ── AUTH ──────────────────────────────────────────────────
 Route::get('/',      [AuthWebController::class, 'showLogin'])->name('login.form');
@@ -49,7 +74,15 @@ Route::middleware(['auth', 'role:enseignant,admin'])->prefix('enseignant')->name
     Route::post('/corrections/{id}',    [EnseignantDashboard::class, 'corriger'])->name('corrections.corriger');
     Route::get('/antitriche',           [EnseignantDashboard::class, 'antitriche'])->name('antitriche');
     Route::get('/profil',               [EnseignantDashboard::class, 'profil'])->name('profil');
-});
+
+    Route::prefix('correction')->name('correction.')->group(function () {
+    Route::get('/devoirs/{devoirId}/resultats',             [\App\Http\Controllers\Web\Enseignant\CorrectionController::class, 'resultats'])->name('resultats');
+    Route::get('/devoirs/{devoirId}/eleves/{eleveId}',      [\App\Http\Controllers\Web\Enseignant\CorrectionController::class, 'detailEleve'])->name('detail');
+    Route::post('/reponses/{reponseId}',                    [\App\Http\Controllers\Web\Enseignant\CorrectionController::class, 'corriger'])->name('corriger');
+    Route::post('/tentatives/{tentativeId}/tout',           [\App\Http\Controllers\Web\Enseignant\CorrectionController::class, 'corrigerTout'])->name('tout');
+    });
+ 
+    });
 
 // ── ADMIN ─────────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -60,7 +93,34 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/rapports',        [\App\Http\Controllers\Web\Admin\DashboardController::class, 'rapports'])->name('rapports');
     Route::get('/antitriche',      [\App\Http\Controllers\Web\Admin\DashboardController::class, 'antitriche'])->name('antitriche');
     Route::get('/annees-scolaires',[\App\Http\Controllers\Web\Admin\DashboardController::class, 'anneesScolaires'])->name('annees-scolaires');
-});
+
+    Route::prefix('affectations')->name('affectations.')->group(function () {
+    Route::get('/',              [AffectationController::class, 'index'])->name('index');
+    Route::get('/{id}',         [AffectationController::class, 'show'])->name('show');
+    Route::post('/',             [AffectationController::class, 'store'])->name('store');
+    Route::post('/masse',        [AffectationController::class, 'storeMasse'])->name('store-masse');
+    Route::delete('/{id}',       [AffectationController::class, 'destroy'])->name('destroy');
+    Route::post('/copier-annee', [AffectationController::class, 'copierAnnee'])->name('copier');
+     });
+
+    Route::prefix('eleve-classes')->name('eleve-classes.')->group(function () {
+    Route::get('/',                          [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'index'])->name('index');
+    Route::get('/{classeId}',                [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'show'])->name('show');
+    Route::post('/',                         [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'store'])->name('store');
+    Route::post('/masse',                    [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'storeMasse'])->name('store-masse');
+    Route::delete('/{classeId}/{eleveId}',   [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'destroy'])->name('destroy');
+    Route::post('/deplacer',                 [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'deplacer'])->name('deplacer');
+    Route::get('/{classeId}/export',         [\App\Http\Controllers\Web\Admin\EleveClasseController::class, 'exportCsv'])->name('export');
+    });
+
+    Route::prefix('import-csv')->name('import-csv.')->group(function () {
+    Route::get('/',                              [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'index'])->name('index');
+    Route::get('/modele/{type}',                 [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'telechargerModele'])->name('modele');
+    Route::post('/previsualiser',                [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'previsualiser'])->name('previsualiser');
+    Route::post('/importer',                     [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'importer'])->name('importer');
+    });
+
+    });
 
 // Redirection après login selon le rôle
 Route::get('/home', function () {
@@ -71,3 +131,19 @@ Route::get('/home', function () {
         default      => redirect()->route('login'),
     };
 })->middleware('auth')->name('home');
+
+
+// Mot de passe oublié
+Route::get('/forgot-password',  [PasswordResetController::class, 'showForgotForm'])->name('password.forgot');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.send');
+ 
+// Réinitialisation (lien depuis email)
+Route::get('/reset-password/{token}',  [PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/reset-password',         [PasswordResetController::class, 'resetPassword'])->name('password.reset');
+ 
+// Changer son mot de passe (utilisateur connecté)
+Route::middleware('auth')->group(function () {
+    Route::get('/change-password',  [PasswordResetController::class, 'showChangeForm'])->name('password.change');
+    Route::post('/change-password', [PasswordResetController::class, 'changePassword'])->name('password.change.update');
+});
+ 
