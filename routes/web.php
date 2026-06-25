@@ -11,23 +11,28 @@ use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\Web\PasswordResetController;
 use App\Http\Controllers\Web\BulletinController;
 
+ 
 
 // Super Admin — accessible sur /superadmin
 Route::prefix('superadmin')->name('superadmin.')->group(function () {
- 
-    // Auth (public)
+ // Auth (public)
     Route::get('login',  [SuperAdminAuth::class, 'showLogin'])->name('login');
     Route::post('login', [SuperAdminAuth::class, 'login'])->name('login.post');
     Route::post('logout',[SuperAdminAuth::class, 'logout'])->name('logout');
-  // Routes protégées
+ 
+    // Routes protégées
     Route::middleware('superadmin.auth')->group(function () {
-        Route::get('/',                         [TenantController::class, 'dashboard'])->name('dashboard');
-        Route::post('/tenants',                 [TenantController::class, 'store'])->name('tenants.store');
-        Route::get('/tenants/{id}',             [TenantController::class, 'show'])->name('tenants.show');
-        Route::put('/tenants/{id}',             [TenantController::class, 'update'])->name('tenants.update');
-        Route::patch('/tenants/{id}/toggle',    [TenantController::class, 'toggleActif'])->name('tenants.toggle');
-        Route::post('/tenants/{id}/migrate',    [TenantController::class, 'migrate'])->name('tenants.migrate');
-        Route::delete('/tenants/{id}',          [TenantController::class, 'destroy'])->name('tenants.destroy');
+        Route::get('/',                                    [TenantController::class, 'dashboard'])->name('dashboard');
+        Route::get('/export-csv',                          [TenantController::class, 'exportCsv'])->name('export-csv');
+ 
+        Route::post('/tenants',                            [TenantController::class, 'store'])->name('tenants.store');
+        Route::get('/tenants/{id}',                        [TenantController::class, 'show'])->name('tenants.show');
+        Route::put('/tenants/{id}',                        [TenantController::class, 'update'])->name('tenants.update');
+        Route::patch('/tenants/{id}/toggle',               [TenantController::class, 'toggleActif'])->name('tenants.toggle');
+        Route::post('/tenants/{id}/migrate',               [TenantController::class, 'migrate'])->name('tenants.migrate');
+        Route::delete('/tenants/{id}',                     [TenantController::class, 'destroy'])->name('tenants.destroy');
+        Route::post('/tenants/{id}/reset-password',        [TenantController::class, 'resetAdminPassword'])->name('tenants.reset-password');
+        Route::post('/tenants/{id}/renvoyer-email',        [TenantController::class, 'renvoyerEmail'])->name('tenants.renvoyer-email');
     });
 });
  
