@@ -14,12 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     
-    ->withMiddleware(function (Middleware $middleware): void {
-         $middleware->alias([
+    // ->withMiddleware(function (Middleware $middleware): void {
+    //      $middleware->alias([
+    //     'role'            => \App\Http\Middleware\CheckRole::class,
+    //     'devoir_en_cours' => \App\Http\Middleware\DevoirEnCours::class,
+    // ]);
+    // })
+    ->withMiddleware(function (Middleware $middleware) {
+    $middleware->redirectGuestsTo('/login');  // ← ajouter
+    $middleware->alias([
         'role'            => \App\Http\Middleware\CheckRole::class,
         'devoir_en_cours' => \App\Http\Middleware\DevoirEnCours::class,
     ]);
     })
+    
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),

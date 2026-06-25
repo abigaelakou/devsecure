@@ -61,17 +61,23 @@ return [
     |
     */
 
+    // 'providers' => [
+    //     'users' => [
+    //         'driver' => 'eloquent',
+    //         'model' => env('AUTH_MODEL', User::class),
+    //     ],
     'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+    'users' => [
+        'driver' => 'eloquent',
+        'model'  => App\Models\Tenant\User::class,  // ← ton modèle tenant
         ],
+    ],
 
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
         // ],
-    ],
+    // ],
 
     /*
     |--------------------------------------------------------------------------
