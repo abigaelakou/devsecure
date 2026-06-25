@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         'role'            => \App\Http\Middleware\CheckRole::class,
         'devoir_en_cours' => \App\Http\Middleware\DevoirEnCours::class,
         'superadmin.auth' => \App\Http\Middleware\SuperAdminAuth::class,
+        'plan.feature'    => \App\Http\Middleware\CheckPlanFeature::class,  // 
+        'plan.limit'      => \App\Http\Middleware\CheckPlanLimit::class,    // 
     ]);
     })
     
