@@ -127,7 +127,12 @@
                 Se souvenir de moi
             </label>
         </div>
-
+        <div style="text-align:right;margin-top:0.5rem">
+            <a href="{{ route('password.forgot') }}"
+            style="font-size:0.8rem;color:#4F46E5;text-decoration:none">
+                Mot de passe oublié ?
+            </a>
+        </div>
         <button type="submit" class="btn-login">
             <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
         </button>

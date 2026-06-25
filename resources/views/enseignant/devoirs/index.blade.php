@@ -65,7 +65,7 @@
                 <td style="padding:0.875rem 1rem">
                     <div style="display:flex;gap:0.4rem">
                         <a href="{{ route('enseignant.devoirs.edit', $devoir->id) }}" style="width:28px;height:28px;border:1px solid #E5E7EB;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#6B7280;text-decoration:none" title="Modifier"><i class="bi bi-pencil"></i></a>
-                        <a href="{{ route('enseignant.devoirs.resultats', $devoir->id) }}" style="width:28px;height:28px;border:1px solid #E5E7EB;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#6B7280;text-decoration:none" title="Résultats"><i class="bi bi-bar-chart"></i></a>
+                        <a href="{{ route('enseignant.correction.resultats', $devoir->id) }}" style="width:28px;height:28px;border:1px solid #E5E7EB;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#6B7280;text-decoration:none" title="Résultats"><i class="bi bi-bar-chart"></i></a>
                         @if($devoir->statut === 'brouillon')
                         <form method="POST" action="{{ route('enseignant.devoirs.publier', $devoir->id) }}">
                             @csrf

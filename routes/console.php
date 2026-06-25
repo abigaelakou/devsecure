@@ -12,6 +12,7 @@ Artisan::command('inspire', function () {
 // Toutes les minutes — soumet les devoirs expirés (filet de sécurité)
 Schedule::command('devoirs:soumettre-expires')->everyMinute();
 
-
+Schedule::command('notifications:rappels-echeance')->dailyAt('08:00');
+Schedule::command('devoirs:soumettre-expires')->everyMinute();
 
 

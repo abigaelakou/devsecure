@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->alias([
         'role'            => \App\Http\Middleware\CheckRole::class,
         'devoir_en_cours' => \App\Http\Middleware\DevoirEnCours::class,
+        'superadmin.auth' => \App\Http\Middleware\SuperAdminAuth::class,
     ]);
     })
     

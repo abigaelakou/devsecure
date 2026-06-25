@@ -42,7 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'superadmin' => [           // ← Ajouter ce guard
+        'driver'   => 'session',
+        'provider' => 'superadmins',
     ],
+    ],
+   
 
     /*
     |--------------------------------------------------------------------------
@@ -69,9 +74,14 @@ return [
     'providers' => [
     'users' => [
         'driver' => 'eloquent',
-        'model'  => App\Models\Tenant\User::class,  // ← ton modèle tenant
+        'model'  => App\Models\Tenant\User::class,  // 
+        ],
+        'superadmins' => [          // 
+        'driver' => 'eloquent',
+        'model'  => App\Models\Landlord\SuperAdmin::class,
         ],
     ],
+   
 
         // 'users' => [
         //     'driver' => 'database',
@@ -119,5 +129,9 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+
+
+
 
 ];
