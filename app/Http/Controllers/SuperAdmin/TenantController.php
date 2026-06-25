@@ -344,13 +344,9 @@ class TenantController extends Controller
         return $stats;
     }
 
-    private function getLimitesPlan(string $plan): array
+   private function getLimitesPlan(string $plan): array
     {
-        return match($plan) {
-            'gratuit'  => ['max_eleves' => 100,  'max_enseignants' => 5],
-            'standard' => ['max_eleves' => 500,  'max_enseignants' => 30],
-            'premium'  => ['max_eleves' => 9999, 'max_enseignants' => 999],
-            default    => ['max_eleves' => 100,  'max_enseignants' => 5],
-        };
+        return config("plans.{$plan}", config('plans.gratuit'));
     }
+
 }
