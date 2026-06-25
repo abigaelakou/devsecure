@@ -58,9 +58,10 @@ class BulletinController extends Controller
             : null;
 
         // Classe de l'élève
-        $classe = $eleve->classes()
-            ->where('annee_scolaire_id', $annee?->id)
-            ->first();
+       
+    $classe = $eleve->classes()
+        ->wherePivot('annee_scolaire_id', $annee?->id)
+        ->first();
 
         $data = [
             'eleve'           => $eleve,

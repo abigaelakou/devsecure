@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Eleve\PassageWebController;
 use App\Http\Controllers\Web\Enseignant\DashboardController as EnseignantDashboard;
 use App\Http\Controllers\Web\Enseignant\DevoirWebController;
 use App\Http\Controllers\Web\Enseignant\CorrectionController;
+use App\Http\Controllers\Web\Enseignant\QuestionController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Web\Admin\AffectationController;
 use App\Http\Controllers\Web\Admin\EleveClasseController;
@@ -26,10 +27,10 @@ Route::post('/login', [AuthWebController::class, 'login'])->name('login.post');
 Route::post('/logout',[AuthWebController::class, 'logout'])->name('logout');
 
 // ── MOT DE PASSE ──────────────────────────────────────────
-Route::get('/forgot-password',       [PasswordResetController::class, 'showForgotForm'])->name('password.forgot');
-Route::post('/forgot-password',      [PasswordResetController::class, 'sendResetLink'])->name('password.send');
-Route::get('/reset-password/{token}',[PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
-Route::post('/reset-password',       [PasswordResetController::class, 'resetPassword'])->name('password.reset');
+Route::get('/forgot-password',        [PasswordResetController::class, 'showForgotForm'])->name('password.forgot');
+Route::post('/forgot-password',       [PasswordResetController::class, 'sendResetLink'])->name('password.send');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/reset-password',        [PasswordResetController::class, 'resetPassword'])->name('password.reset');
 
 Route::middleware('auth')->group(function () {
     Route::get('/change-password',  [PasswordResetController::class, 'showChangeForm'])->name('password.change');
@@ -50,17 +51,17 @@ Route::get('/home', function () {
 // ESPACE ÉLÈVE
 // ════════════════════════════════════════════════════════════
 Route::middleware(['auth', 'role:eleve'])->prefix('eleve')->name('eleve.')->group(function () {
-    Route::get('/dashboard',              [EleveDashboard::class, 'index'])->name('dashboard');
-    Route::get('/devoirs',                [EleveDashboard::class, 'devoirs'])->name('devoirs');
-    Route::get('/devoirs/{id}',           [EleveDashboard::class, 'show'])->name('devoir.show');
-    Route::post('/devoirs/{id}/commencer',[PassageWebController::class, 'commencer'])->name('devoir.commencer');
-    Route::get('/resultats',              [EleveDashboard::class, 'resultats'])->name('resultats');
-    Route::get('/resultats/{id}',         [EleveDashboard::class, 'detailResultat'])->name('resultat.detail');
-    Route::get('/profil',                 [EleveDashboard::class, 'profil'])->name('profil');
-    Route::get('/bulletin',               [BulletinController::class, 'bulletinEleve'])->name('bulletin');
+    Route::get('/dashboard',               [EleveDashboard::class, 'index'])->name('dashboard');
+    Route::get('/devoirs',                 [EleveDashboard::class, 'devoirs'])->name('devoirs');
+    Route::get('/devoirs/{id}',            [EleveDashboard::class, 'show'])->name('devoir.show');
+    Route::post('/devoirs/{id}/commencer', [PassageWebController::class, 'commencer'])->name('devoir.commencer');
+    Route::get('/resultats',               [EleveDashboard::class, 'resultats'])->name('resultats');
+    Route::get('/resultats/{id}',          [EleveDashboard::class, 'detailResultat'])->name('resultat.detail');
+    Route::get('/profil',                  [EleveDashboard::class, 'profil'])->name('profil');
+    Route::get('/bulletin',                [BulletinController::class, 'bulletinEleve'])->name('bulletin');
 });
 
-// Routes passage (sans prefix pour garder des URLs courtes)
+// Routes passage
 Route::middleware(['auth', 'role:eleve'])->group(function () {
     Route::get('/devoir/{tentativeId}/question/{numero}',
         [PassageWebController::class, 'question'])->name('eleve.passage.question')->defaults('numero', 1);
@@ -73,36 +74,50 @@ Route::middleware(['auth', 'role:eleve'])->group(function () {
 // ════════════════════════════════════════════════════════════
 // ESPACE ENSEIGNANT
 // ════════════════════════════════════════════════════════════
-Route::middleware(['auth', 'role:enseignant,admin'])->prefix('enseignant')->name('enseignant.')->group(function () {
+Route::middleware(['auth', 'role:enseignant,admin'])
+    ->prefix('enseignant')
+    ->name('enseignant.')
+    ->group(function () {
 
-    // Dashboard
-    Route::get('/dashboard',    [EnseignantDashboard::class, 'index'])->name('dashboard');
-    Route::get('/classes',      [EnseignantDashboard::class, 'classes'])->name('classes');
-    Route::get('/statistiques', [EnseignantDashboard::class, 'statistiques'])->name('statistiques');
-    Route::get('/corrections',  [EnseignantDashboard::class, 'corrections'])->name('corrections');
+    // ── Dashboard ────────────────────────────────────────
+    Route::get('/dashboard',         [EnseignantDashboard::class, 'index'])->name('dashboard');
+    Route::get('/classes',           [EnseignantDashboard::class, 'classes'])->name('classes');
+    Route::get('/statistiques',      [EnseignantDashboard::class, 'statistiques'])->name('statistiques');
+    Route::get('/corrections',       [EnseignantDashboard::class, 'corrections'])->name('corrections');
     Route::post('/corrections/{id}', [EnseignantDashboard::class, 'corriger'])->name('corrections.corriger');
-    Route::get('/antitriche',   [EnseignantDashboard::class, 'antitriche'])->name('antitriche');
-    Route::get('/profil',       [EnseignantDashboard::class, 'profil'])->name('profil');
+    Route::get('/antitriche',        [EnseignantDashboard::class, 'antitriche'])->name('antitriche');
+    Route::get('/profil',            [EnseignantDashboard::class, 'profil'])->name('profil');
 
-    // Devoirs
-    Route::get('/devoirs',              [DevoirWebController::class, 'index'])->name('devoirs.index');
-    Route::get('/devoirs/create',       [DevoirWebController::class, 'create'])->name('devoirs.create');
-    Route::post('/devoirs',             [DevoirWebController::class, 'store'])->name('devoirs.store');
-    Route::get('/devoirs/{id}/edit',    [DevoirWebController::class, 'edit'])->name('devoirs.edit');
-    Route::put('/devoirs/{id}',         [DevoirWebController::class, 'update'])->name('devoirs.update');
-    Route::delete('/devoirs/{id}',      [DevoirWebController::class, 'destroy'])->name('devoirs.destroy');
-    Route::post('/devoirs/{id}/publier',[DevoirWebController::class, 'publier'])->name('devoirs.publier');
+    // ── Devoirs ──────────────────────────────────────────
+    Route::get('/devoirs',               [DevoirWebController::class, 'index'])->name('devoirs.index');
+    Route::get('/devoirs/create',        [DevoirWebController::class, 'create'])->name('devoirs.create');
+    Route::post('/devoirs',              [DevoirWebController::class, 'store'])->name('devoirs.store');
+    Route::get('/devoirs/{id}/edit',     [DevoirWebController::class, 'edit'])->name('devoirs.edit');
+    Route::put('/devoirs/{id}',          [DevoirWebController::class, 'update'])->name('devoirs.update');
+    Route::delete('/devoirs/{id}',       [DevoirWebController::class, 'destroy'])->name('devoirs.destroy');
+    Route::post('/devoirs/{id}/publier', [DevoirWebController::class, 'publier'])->name('devoirs.publier');
     Route::get('/devoirs/{id}/resultats',[DevoirWebController::class, 'resultats'])->name('devoirs.resultats');
 
-    // Correction manuelle
+    // ── Questions ────────────────────────────────────────
+    Route::prefix('devoirs/{devoirId}/questions')
+        ->name('questions.')
+        ->group(function () {
+            Route::post('/',                       [QuestionController::class, 'store'])->name('store');
+            Route::put('/{questionId}',            [QuestionController::class, 'update'])->name('update');
+            Route::delete('/{questionId}',         [QuestionController::class, 'destroy'])->name('destroy');
+            Route::post('/{questionId}/dupliquer', [QuestionController::class, 'dupliquer'])->name('dupliquer');
+            Route::post('/reordonner',             [QuestionController::class, 'reordonner'])->name('reordonner');
+        });
+
+    // ── Correction manuelle ──────────────────────────────
     Route::prefix('correction')->name('correction.')->group(function () {
-        Route::get('/devoirs/{devoirId}/resultats',         [CorrectionController::class, 'resultats'])->name('resultats');
-        Route::get('/devoirs/{devoirId}/eleves/{eleveId}',  [CorrectionController::class, 'detailEleve'])->name('detail');
-        Route::post('/reponses/{reponseId}',                [CorrectionController::class, 'corriger'])->name('corriger');
-        Route::post('/tentatives/{tentativeId}/tout',       [CorrectionController::class, 'corrigerTout'])->name('tout');
+        Route::get('/devoirs/{devoirId}/resultats',        [CorrectionController::class, 'resultats'])->name('resultats');
+        Route::get('/devoirs/{devoirId}/eleves/{eleveId}', [CorrectionController::class, 'detailEleve'])->name('detail');
+        Route::post('/reponses/{reponseId}',               [CorrectionController::class, 'corriger'])->name('corriger');
+        Route::post('/tentatives/{tentativeId}/tout',      [CorrectionController::class, 'corrigerTout'])->name('tout');
     });
 
-    // Bulletins PDF
+    // ── Bulletins PDF ────────────────────────────────────
     Route::get('/eleves/{eleveId}/bulletin', [BulletinController::class, 'bulletinEleve'])->name('bulletin.eleve');
     Route::get('/classes/{classeId}/releve', [BulletinController::class, 'bulletinClasse'])->name('bulletin.classe');
 });
@@ -110,9 +125,12 @@ Route::middleware(['auth', 'role:enseignant,admin'])->prefix('enseignant')->name
 // ════════════════════════════════════════════════════════════
 // ESPACE ADMIN
 // ════════════════════════════════════════════════════════════
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    // Dashboard + pages principales
+    // ── Dashboard + pages principales ────────────────────
     Route::get('/dashboard',        [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/utilisateurs',     [AdminDashboard::class, 'utilisateurs'])->name('utilisateurs');
     Route::post('/utilisateurs',    [AdminDashboard::class, 'storeUtilisateur'])->name('utilisateurs.store');
@@ -127,7 +145,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/annees-scolaires',[AdminDashboard::class, 'storeAnnee'])->name('annees-scolaires.store');
     Route::patch('/annees-scolaires/{id}/activer', [AdminDashboard::class, 'activerAnnee'])->name('annees-scolaires.activer');
 
-    // Affectations enseignant → matière/classe
+    // ── Affectations enseignant → matière/classe ─────────
     Route::prefix('affectations')->name('affectations.')->group(function () {
         Route::get('/',              [AffectationController::class, 'index'])->name('index');
         Route::get('/{id}',          [AffectationController::class, 'show'])->name('show');
@@ -137,7 +155,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::post('/copier-annee', [AffectationController::class, 'copierAnnee'])->name('copier');
     });
 
-    // Affectations élève → classe
+    // ── Affectations élève → classe ──────────────────────
     Route::prefix('eleve-classes')->name('eleve-classes.')->group(function () {
         Route::get('/',                        [EleveClasseController::class, 'index'])->name('index');
         Route::get('/{classeId}',              [EleveClasseController::class, 'show'])->name('show');
@@ -148,17 +166,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/{classeId}/export',       [EleveClasseController::class, 'exportCsv'])->name('export');
     });
 
-    // Import CSV
+    // ── Import CSV ───────────────────────────────────────
     Route::prefix('import-csv')->name('import-csv.')->group(function () {
-        Route::get('/',                [ImportCsvController::class, 'index'])->name('index');
-        Route::get('/modele/{type}',   [ImportCsvController::class, 'telechargerModele'])->name('modele');
-        Route::post('/previsualiser',  [ImportCsvController::class, 'previsualiser'])->name('previsualiser');
-        Route::post('/importer',       [ImportCsvController::class, 'importer'])->name('importer');
+        Route::get('/',               [ImportCsvController::class, 'index'])->name('index');
+        Route::get('/modele/{type}',  [ImportCsvController::class, 'telechargerModele'])->name('modele');
+        Route::post('/previsualiser', [ImportCsvController::class, 'previsualiser'])->name('previsualiser');
+        Route::post('/importer',      [ImportCsvController::class, 'importer'])->name('importer');
     });
 
-    // Bulletins PDF
-    Route::get('/eleves/{eleveId}/bulletin',   [BulletinController::class, 'bulletinEleve'])->name('bulletin.eleve');
-    Route::get('/classes/{classeId}/releve',   [BulletinController::class, 'bulletinClasse'])->name('bulletin.classe');
+    // ── Bulletins PDF ────────────────────────────────────
+    Route::get('/eleves/{eleveId}/bulletin', [BulletinController::class, 'bulletinEleve'])->name('bulletin.eleve');
+    Route::get('/classes/{classeId}/releve', [BulletinController::class, 'bulletinClasse'])->name('bulletin.classe');
 });
 
 // ════════════════════════════════════════════════════════════
@@ -173,15 +191,15 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Routes protégées
     Route::middleware('superadmin.auth')->group(function () {
-        Route::get('/',                                 [TenantController::class, 'dashboard'])->name('dashboard');
-        Route::get('/export-csv',                       [TenantController::class, 'exportCsv'])->name('export-csv');
-        Route::post('/tenants',                         [TenantController::class, 'store'])->name('tenants.store');
-        Route::get('/tenants/{id}',                     [TenantController::class, 'show'])->name('tenants.show');
-        Route::put('/tenants/{id}',                     [TenantController::class, 'update'])->name('tenants.update');
-        Route::patch('/tenants/{id}/toggle',            [TenantController::class, 'toggleActif'])->name('tenants.toggle');
-        Route::post('/tenants/{id}/migrate',            [TenantController::class, 'migrate'])->name('tenants.migrate');
-        Route::delete('/tenants/{id}',                  [TenantController::class, 'destroy'])->name('tenants.destroy');
-        Route::post('/tenants/{id}/reset-password',     [TenantController::class, 'resetAdminPassword'])->name('tenants.reset-password');
-        Route::post('/tenants/{id}/renvoyer-email',     [TenantController::class, 'renvoyerEmail'])->name('tenants.renvoyer-email');
+        Route::get('/',                             [TenantController::class, 'dashboard'])->name('dashboard');
+        Route::get('/export-csv',                   [TenantController::class, 'exportCsv'])->name('export-csv');
+        Route::post('/tenants',                     [TenantController::class, 'store'])->name('tenants.store');
+        Route::get('/tenants/{id}',                 [TenantController::class, 'show'])->name('tenants.show');
+        Route::put('/tenants/{id}',                 [TenantController::class, 'update'])->name('tenants.update');
+        Route::patch('/tenants/{id}/toggle',        [TenantController::class, 'toggleActif'])->name('tenants.toggle');
+        Route::post('/tenants/{id}/migrate',        [TenantController::class, 'migrate'])->name('tenants.migrate');
+        Route::delete('/tenants/{id}',              [TenantController::class, 'destroy'])->name('tenants.destroy');
+        Route::post('/tenants/{id}/reset-password', [TenantController::class, 'resetAdminPassword'])->name('tenants.reset-password');
+        Route::post('/tenants/{id}/renvoyer-email', [TenantController::class, 'renvoyerEmail'])->name('tenants.renvoyer-email');
     });
 });

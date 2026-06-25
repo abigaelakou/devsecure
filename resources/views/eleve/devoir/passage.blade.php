@@ -1,151 +1,310 @@
 @extends('layouts.app')
-
-@section('title', 'Tableau de bord')
-@section('page-title', 'Tableau de bord')
-@section('page-subtitle', 'Bienvenue, ' . auth()->user()->prenoms . ' !')
+@section('title', 'Devoir en cours')
+@section('page-title', $devoir->titre)
+@section('page-subtitle', $devoir->matiere?->nom . ' · Question ' . $questionCourante . '/' . count($questions))
 
 @section('content')
 
-{{-- Stats rapides --}}
-<div class="stat-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#EEF2FF;color:#4F46E5">
-            <i class="bi bi-journals"></i>
+{{-- BARRE DE PROGRESSION + TIMER ─────────────────────────────── --}}
+<div style="background:white;border:1.5px solid #E5E7EB;border-radius:14px;padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.5rem">
+
+    {{-- Progression questions --}}
+    <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#6B7280;margin-bottom:0.4rem">
+            <span>Progression</span>
+            <span>{{ $questionCourante }}/{{ count($questions) }}</span>
         </div>
-        <div class="stat-value">{{ $devoirsDisponibles }}</div>
-        <div class="stat-label">Devoirs disponibles</div>
+        <div style="height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden">
+            <div style="height:100%;background:#4F46E5;border-radius:3px;width:{{ round($questionCourante / count($questions) * 100) }}%;transition:width 0.3s"></div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#D1FAE5;color:#059669">
-            <i class="bi bi-check2-circle"></i>
+
+    {{-- Timer global --}}
+    @if($devoir->duree_totale_minutes)
+    <div style="text-align:center;min-width:80px">
+        <div id="timerGlobal" style="font-size:1.5rem;font-weight:800;color:#4F46E5;font-family:monospace">
+            {{ sprintf('%02d:%02d', floor($devoir->duree_totale_minutes), 0) }}
         </div>
-        <div class="stat-value">{{ $devoirsTermines }}</div>
-        <div class="stat-label">Devoirs terminés</div>
+        <div style="font-size:0.7rem;color:#6B7280">Temps restant</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#FEF3C7;color:#D97706">
-            <i class="bi bi-star-fill"></i>
-        </div>
-        <div class="stat-value">{{ $moyenneGenerale ?? '—' }}</div>
-        <div class="stat-label">Moyenne générale /20</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:#FEE2E2;color:#DC2626">
-            <i class="bi bi-clock-history"></i>
-        </div>
-        <div class="stat-value">{{ $devoirsEnCours }}</div>
-        <div class="stat-label">En cours</div>
+    @endif
+
+    {{-- Antitriche warning --}}
+    <div id="antitricheStatus" style="font-size:0.78rem;color:#059669;display:flex;align-items:center;gap:0.4rem">
+        <i class="bi bi-shield-check"></i> Surveillance active
     </div>
 </div>
 
-{{-- Devoirs disponibles --}}
-<div class="card-section">
-    <div class="card-header-row">
-        <h2><i class="bi bi-journals me-2" style="color:#4F46E5"></i>Devoirs disponibles</h2>
-        <a href="{{ route('eleve.devoirs') }}" style="font-size:0.8rem;color:#4F46E5;text-decoration:none">
-            Voir tous <i class="bi bi-arrow-right"></i>
-        </a>
-    </div>
+{{-- NAVIGATION QUESTIONS (dots) ──────────────────────────────── --}}
+<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.5rem">
+    @foreach($questions as $i => $q)
+    @php
+        $num = $i + 1;
+        $repondue = in_array($q->id, $questionsRepondues);
+        $courante = $num === $questionCourante;
+    @endphp
+    <a href="{{ route('eleve.passage.question', [$tentative->id, $num]) }}"
+       style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;text-decoration:none;border:2px solid {{ $courante ? '#4F46E5' : ($repondue ? '#059669' : '#E5E7EB') }};background:{{ $courante ? '#4F46E5' : ($repondue ? '#ECFDF5' : 'white') }};color:{{ $courante ? 'white' : ($repondue ? '#059669' : '#6B7280') }}">
+        {{ $num }}
+    </a>
+    @endforeach
+</div>
 
-    @if($devoirs->isEmpty())
-        <div style="padding:2rem;text-align:center;color:#6B7280">
-            <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem"></i>
-            Aucun devoir disponible pour le moment.
-        </div>
-    @else
-        <div style="padding:1rem 1.5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem">
-            @foreach($devoirs as $devoir)
-                <div style="border:1px solid #E5E7EB;border-radius:12px;padding:1.25rem;transition:box-shadow 0.2s"
-                     onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'"
-                     onmouseout="this.style.boxShadow='none'">
+{{-- QUESTION COURANTE ────────────────────────────────────────── --}}
+@php $question = $questions[$questionCourante - 1]; @endphp
 
-                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
-                        <span style="background:{{ $devoir->matiere?->couleur ?? '#4F46E5' }}20;color:{{ $devoir->matiere?->couleur ?? '#4F46E5' }};font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase">
-                            {{ $devoir->matiere?->nom ?? 'Matière' }}
-                        </span>
-                        @if($devoir->expire_le && $devoir->expire_le->diffInDays() <= 2)
-                            <span style="background:#FEF3C7;color:#D97706;font-size:0.72rem;font-weight:600;padding:3px 8px;border-radius:20px">
-                                <i class="bi bi-clock"></i> Expire bientôt
-                            </span>
-                        @endif
-                    </div>
+<div style="display:grid;grid-template-columns:1fr 280px;gap:1.5rem">
 
-                    <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:0.5rem">{{ $devoir->titre }}</h3>
+    {{-- Carte question --}}
+    <div class="card-section">
+        <div style="padding:1.5rem">
 
-                    <div style="font-size:0.8rem;color:#6B7280;display:flex;gap:1rem;margin-bottom:1rem">
-                        <span><i class="bi bi-question-circle me-1"></i>{{ $devoir->questions_count }} questions</span>
-                        @if($devoir->duree_totale_minutes)
-                            <span><i class="bi bi-clock me-1"></i>{{ $devoir->duree_totale_minutes }} min</span>
-                        @endif
-                        <span><i class="bi bi-person me-1"></i>{{ $devoir->enseignant?->nom }}</span>
-                    </div>
+            {{-- Numéro + type --}}
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
+                <div style="width:40px;height:40px;background:#EEF2FF;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:0.875rem;font-weight:800;color:#4F46E5;flex-shrink:0">
+                    {{ $questionCourante }}
+                </div>
+                <div>
+                    @php
+                    $typeLabels = ['qcm'=>'QCM','vrai_faux'=>'Vrai / Faux','reponse_courte'=>'Réponse courte','redactionnel'=>'Rédactionnel'];
+                    $typeColors = ['qcm'=>['#EEF2FF','#4F46E5'],'vrai_faux'=>['#ECFDF5','#059669'],'reponse_courte'=>['#FEF3C7','#D97706'],'redactionnel'=>['#FEE2E2','#DC2626']];
+                    $tc = $typeColors[$question->type] ?? ['#F3F4F6','#6B7280'];
+                    @endphp
+                    <span style="background:{{ $tc[0] }};color:{{ $tc[1] }};font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:20px">
+                        {{ $typeLabels[$question->type] ?? $question->type }}
+                    </span>
+                    <span style="font-size:0.75rem;color:#6B7280;margin-left:0.5rem">{{ $question->points }} pt(s)</span>
+                </div>
+                {{-- Timer par question --}}
+                @if($devoir->temps_par_question_secondes)
+                <div id="timerQuestion" style="margin-left:auto;font-size:1rem;font-weight:700;color:#D97706;font-family:monospace">
+                    {{ sprintf('%02d:%02d', floor($devoir->temps_par_question_secondes / 60), $devoir->temps_par_question_secondes % 60) }}
+                </div>
+                @endif
+            </div>
 
-                    @if($devoir->expire_le)
-                        <div style="font-size:0.75rem;color:#6B7280;margin-bottom:0.875rem">
-                            <i class="bi bi-calendar3 me-1"></i>
-                            Expire le {{ $devoir->expire_le->format('d/m/Y à H:i') }}
+            {{-- Énoncé --}}
+            <div style="font-size:1rem;font-weight:500;color:#111827;line-height:1.7;margin-bottom:1.5rem">
+                {{ $question->enonce }}
+            </div>
+
+            {{-- Formulaire réponse --}}
+            <form method="POST" action="{{ route('eleve.passage.repondre', $tentative->id) }}" id="formReponse">
+                @csrf
+                <input type="hidden" name="question_id" value="{{ $question->id }}">
+                <input type="hidden" name="temps_utilise" id="tempsUtilise" value="0">
+
+                {{-- QCM --}}
+                @if($question->type === 'qcm')
+                <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem">
+                    @foreach($question->reponsesPossibles->sortBy($devoir->reponses_aleatoires ? fn() => rand() : 'ordre') as $reponse)
+                    <label style="cursor:pointer">
+                        <input type="radio" name="reponse_possible_id" value="{{ $reponse->id }}"
+                               {{ $reponseExistante?->reponse_possible_id === $reponse->id ? 'checked' : '' }}
+                               style="display:none" class="reponse-radio">
+                        <div class="reponse-option"
+                             style="padding:0.875rem 1.25rem;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;color:#374151;transition:all 0.15s;{{ $reponseExistante?->reponse_possible_id === $reponse->id ? 'border-color:#4F46E5;background:#EEF2FF;color:#4F46E5;' : '' }}">
+                            {{ $reponse->texte }}
                         </div>
+                    </label>
+                    @endforeach
+                </div>
+
+                {{-- Vrai/Faux --}}
+                @elseif($question->type === 'vrai_faux')
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+                    @foreach($question->reponsesPossibles->sortBy('ordre') as $reponse)
+                    <label style="cursor:pointer">
+                        <input type="radio" name="reponse_possible_id" value="{{ $reponse->id }}"
+                               {{ $reponseExistante?->reponse_possible_id === $reponse->id ? 'checked' : '' }}
+                               style="display:none" class="reponse-radio">
+                        <div class="reponse-option"
+                             style="padding:1.25rem;border:2px solid #E5E7EB;border-radius:12px;text-align:center;font-size:1rem;font-weight:700;color:#374151;transition:all 0.15s;{{ $reponseExistante?->reponse_possible_id === $reponse->id ? 'border-color:#4F46E5;background:#EEF2FF;color:#4F46E5;' : '' }}">
+                            {{ $reponse->texte === 'Vrai' ? '✓ Vrai' : '✗ Faux' }}
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+
+                {{-- Réponse courte --}}
+                @elseif($question->type === 'reponse_courte')
+                <div style="margin-bottom:1.5rem">
+                    <input type="text" name="texte_libre"
+                           value="{{ $reponseExistante?->texte_libre }}"
+                           placeholder="Votre réponse..."
+                           style="width:100%;padding:0.875rem;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;transition:border-color 0.2s"
+                           onfocus="this.style.borderColor='#4F46E5'"
+                           onblur="this.style.borderColor='#E5E7EB'">
+                </div>
+
+                {{-- Rédactionnel --}}
+                @elseif($question->type === 'redactionnel')
+                <div style="margin-bottom:1.5rem">
+                    <textarea name="texte_libre" rows="6"
+                              placeholder="Rédigez votre réponse ici..."
+                              style="width:100%;padding:0.875rem;border:2px solid #E5E7EB;border-radius:12px;font-size:0.9rem;resize:vertical;transition:border-color 0.2s"
+                              onfocus="this.style.borderColor='#4F46E5'"
+                              onblur="this.style.borderColor='#E5E7EB'">{{ $reponseExistante?->texte_libre }}</textarea>
+                </div>
+                @endif
+
+                {{-- Boutons navigation --}}
+                <div style="display:flex;gap:1rem;justify-content:space-between">
+                    @if($questionCourante > 1)
+                    <a href="{{ route('eleve.passage.question', [$tentative->id, $questionCourante - 1]) }}"
+                       style="padding:0.75rem 1.5rem;background:#F3F4F6;color:#374151;border-radius:10px;text-decoration:none;font-size:0.9rem;font-weight:600">
+                        <i class="bi bi-arrow-left me-1"></i> Précédent
+                    </a>
+                    @else
+                    <div></div>
                     @endif
 
-                    <a href="{{ route('eleve.devoir.show', $devoir->id) }}"
-                       style="display:block;text-align:center;background:#4F46E5;color:white;padding:0.6rem;border-radius:8px;text-decoration:none;font-size:0.875rem;font-weight:600;transition:background 0.2s"
-                       onmouseover="this.style.background='#3730A3'"
-                       onmouseout="this.style.background='#4F46E5'">
-                        <i class="bi bi-play-circle me-1"></i>Commencer
-                    </a>
+                    @if($questionCourante < count($questions))
+                    <button type="submit"
+                            style="padding:0.75rem 2rem;background:#4F46E5;color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer">
+                        Suivant <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    @else
+                    <button type="submit"
+                            style="padding:0.75rem 2rem;background:#059669;color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer">
+                        <i class="bi bi-check2-circle me-1"></i> Terminer le devoir
+                    </button>
+                    @endif
                 </div>
-            @endforeach
+            </form>
         </div>
-    @endif
+    </div>
+
+    {{-- Sidebar droite --}}
+    <div>
+        {{-- Résumé devoir --}}
+        <div class="card-section" style="margin-bottom:1rem">
+            <div style="padding:1.25rem">
+                <div style="font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.875rem">Résumé</div>
+                @foreach([
+                    ['bi-journals','Devoir',$devoir->titre],
+                    ['bi-book','Matière',$devoir->matiere?->nom ?? '—'],
+                    ['bi-question-circle','Questions',count($questions).' questions'],
+                    ['bi-star','Note sur',$devoir->note_sur.' points'],
+                ] as [$icon,$label,$value])
+                <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.8rem">
+                    <i class="bi {{ $icon }}" style="color:#6B7280;width:16px"></i>
+                    <span style="color:#6B7280;flex:1">{{ $label }}</span>
+                    <span style="font-weight:500;color:#374151">{{ Str::limit($value, 20) }}</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Soumettre manuellement --}}
+        <div class="card-section">
+            <div style="padding:1.25rem">
+                <div style="font-size:0.8rem;color:#6B7280;margin-bottom:0.75rem;line-height:1.5">
+                    Vous pouvez soumettre le devoir à tout moment, même sans répondre à toutes les questions.
+                </div>
+                <button onclick="soumettreMaintenant()"
+                        style="width:100%;padding:0.75rem;background:#FEE2E2;color:#DC2626;border:1.5px solid #FCA5A5;border-radius:10px;font-size:0.875rem;font-weight:600;cursor:pointer">
+                    <i class="bi bi-stop-circle me-1"></i> Soumettre maintenant
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-{{-- Résultats récents --}}
-@if($resultats->isNotEmpty())
-<div class="card-section">
-    <div class="card-header-row">
-        <h2><i class="bi bi-trophy me-2" style="color:#D97706"></i>Mes derniers résultats</h2>
-    </div>
-    <table style="width:100%;border-collapse:collapse">
-        <thead>
-            <tr style="background:#F9FAFB">
-                <th style="padding:0.6rem 1.5rem;font-size:0.72rem;font-weight:600;text-transform:uppercase;color:#6B7280;text-align:left">Devoir</th>
-                <th style="padding:0.6rem 1.5rem;font-size:0.72rem;font-weight:600;text-transform:uppercase;color:#6B7280;text-align:left">Note</th>
-                <th style="padding:0.6rem 1.5rem;font-size:0.72rem;font-weight:600;text-transform:uppercase;color:#6B7280;text-align:left">Mention</th>
-                <th style="padding:0.6rem 1.5rem;font-size:0.72rem;font-weight:600;text-transform:uppercase;color:#6B7280;text-align:left">Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($resultats as $resultat)
-            <tr style="border-top:1px solid #E5E7EB">
-                <td style="padding:0.875rem 1.5rem;font-size:0.875rem;font-weight:500">
-                    {{ $resultat->devoir?->titre }}
-                    <div style="font-size:0.75rem;color:#6B7280">{{ $resultat->devoir?->matiere?->nom }}</div>
-                </td>
-                <td style="padding:0.875rem 1.5rem">
-                    <strong style="font-size:1rem">{{ $resultat->note_finale }}</strong>
-                    <span style="color:#6B7280;font-size:0.8rem">/{{ $resultat->note_sur }}</span>
-                    <div style="font-size:0.72rem;color:#6B7280">{{ $resultat->pourcentage }}%</div>
-                </td>
-                <td style="padding:0.875rem 1.5rem">
-                    @php
-                        $couleur = match(true) {
-                            $resultat->pourcentage >= 75 => ['bg'=>'#D1FAE5','color'=>'#065F46'],
-                            $resultat->pourcentage >= 50 => ['bg'=>'#FEF3C7','color'=>'#92400E'],
-                            default                      => ['bg'=>'#FEE2E2','color'=>'#991B1B'],
-                        };
-                    @endphp
-                    <span style="background:{{ $couleur['bg'] }};color:{{ $couleur['color'] }};font-size:0.72rem;font-weight:600;padding:3px 10px;border-radius:20px">
-                        {{ $resultat->mention }}
-                    </span>
-                </td>
-                <td style="padding:0.875rem 1.5rem;font-size:0.8rem;color:#6B7280">
-                    {{ $resultat->created_at->format('d/m/Y') }}
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+<script>
+// ── ANTITRICHE ────────────────────────────────────────────
+let nbSorties = 0;
+const maxSorties = {{ $devoir->max_changements_onglet ?? 3 }};
+const tentativeId = {{ $tentative->id }};
+const csrfToken = '{{ csrf_token() }}';
+
+function signalerEvenement(type) {
+    fetch('/api/eleve/passage/' + tentativeId + '/antitriche', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+        body: JSON.stringify({ type, numero_question: {{ $questionCourante }} })
+    });
+}
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        nbSorties++;
+        signalerEvenement('changement_onglet');
+        document.getElementById('antitricheStatus').innerHTML =
+            '<i class="bi bi-shield-exclamation" style="color:#DC2626"></i> <span style="color:#DC2626">Sortie détectée (' + nbSorties + '/' + maxSorties + ')</span>';
+
+        if (nbSorties >= maxSorties && {{ $devoir->soumettre_auto_sortie ? 'true' : 'false' }}) {
+            soumettreMaintenant();
+        }
+    }
+});
+
+// ── TIMER GLOBAL ──────────────────────────────────────────
+@if($devoir->duree_totale_minutes)
+let secondesRestantes = {{ $tentative->secondes_restantes ?? ($devoir->duree_totale_minutes * 60) }};
+const timerGlobal = document.getElementById('timerGlobal');
+
+const intervalGlobal = setInterval(function() {
+    secondesRestantes--;
+    if (secondesRestantes <= 0) {
+        clearInterval(intervalGlobal);
+        soumettreMaintenant();
+        return;
+    }
+    const m = Math.floor(secondesRestantes / 60);
+    const s = secondesRestantes % 60;
+    timerGlobal.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    if (secondesRestantes <= 60) timerGlobal.style.color = '#DC2626';
+}, 1000);
 @endif
+
+// ── TIMER PAR QUESTION ────────────────────────────────────
+@if($devoir->temps_par_question_secondes)
+let secsQuestion = {{ $devoir->temps_par_question_secondes }};
+const timerQ = document.getElementById('timerQuestion');
+let secsUtilises = 0;
+
+const intervalQuestion = setInterval(function() {
+    secsQuestion--;
+    secsUtilises++;
+    document.getElementById('tempsUtilise').value = secsUtilises;
+    if (secsQuestion <= 0) {
+        clearInterval(intervalQuestion);
+        signalerEvenement('temps_question_expire');
+        document.getElementById('formReponse').submit();
+        return;
+    }
+    const m = Math.floor(secsQuestion / 60);
+    const s = secsQuestion % 60;
+    timerQ.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    if (secsQuestion <= 10) timerQ.style.color = '#DC2626';
+}, 1000);
+@endif
+
+// ── SÉLECTION RÉPONSE ─────────────────────────────────────
+document.querySelectorAll('.reponse-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.querySelectorAll('.reponse-option').forEach(opt => {
+            opt.style.borderColor = '#E5E7EB';
+            opt.style.background  = 'white';
+            opt.style.color       = '#374151';
+        });
+        this.nextElementSibling.style.borderColor = '#4F46E5';
+        this.nextElementSibling.style.background  = '#EEF2FF';
+        this.nextElementSibling.style.color        = '#4F46E5';
+    });
+});
+
+// ── SOUMETTRE ─────────────────────────────────────────────
+function soumettreMaintenant() {
+    if (!confirm('Soumettre le devoir maintenant ?')) return;
+    fetch('/devoir/' + tentativeId + '/soumettre', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+    })
+    .then(r => r.json())
+    .then(data => { if (data.redirect) window.location.href = data.redirect; });
+}
+</script>
 
 @endsection
