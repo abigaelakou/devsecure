@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Enseignant\DevoirWebController;
 use App\Http\Controllers\SuperAdmin\AuthController as SuperAdminAuth;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\Web\PasswordResetController;
+use App\Http\Controllers\Web\BulletinController;
 
 
 // Super Admin — accessible sur /superadmin
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'role:eleve'])->prefix('eleve')->name('eleve.')->grou
     Route::get('/resultats',       [EleveDashboard::class, 'resultats'])->name('resultats');
     Route::get('/resultats/{id}',  [EleveDashboard::class, 'detailResultat'])->name('resultat.detail');
     Route::get('/profil',          [EleveDashboard::class, 'profil'])->name('profil');
+    Route::get('/eleve/bulletin',  [BulletinController::class, 'bulletinEleve'])->name('eleve.bulletin');
 });
 
 // Routes passage (hors prefix eleve pour URL plus courte)
@@ -82,6 +84,10 @@ Route::middleware(['auth', 'role:enseignant,admin'])->prefix('enseignant')->name
     Route::post('/tentatives/{tentativeId}/tout',           [\App\Http\Controllers\Web\Enseignant\CorrectionController::class, 'corrigerTout'])->name('tout');
     });
  
+
+    Route::get('/enseignant/eleves/{eleveId}/bulletin', [BulletinController::class, 'bulletinEleve'])->name('enseignant.bulletin.eleve');
+    Route::get('/enseignant/classes/{classeId}/releve', [BulletinController::class, 'bulletinClasse'])->name('enseignant.bulletin.classe');
+    
     });
 
 // ── ADMIN ─────────────────────────────────────────────────
@@ -119,6 +125,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/previsualiser',                [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'previsualiser'])->name('previsualiser');
     Route::post('/importer',                     [\App\Http\Controllers\Web\Admin\ImportCsvController::class, 'importer'])->name('importer');
     });
+    Route::get('/admin/eleves/{eleveId}/bulletin', [BulletinController::class, 'bulletinEleve'])->name('admin.bulletin.eleve');
+    Route::get('/admin/classes/{classeId}/releve', [BulletinController::class, 'bulletinClasse'])->name('admin.bulletin.classe');
 
     });
 

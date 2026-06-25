@@ -12,6 +12,11 @@
        style="padding:0.5rem 1rem;background:#F3F4F6;color:#374151;border:1.5px solid #E5E7EB;border-radius:8px;font-size:0.875rem;font-weight:600;text-decoration:none">
         <i class="bi bi-arrow-left me-1"></i> Retour
     </a>
+    <a href="{{ route('admin.bulletin.eleve', $eleve->id) }}"
+        style="width:28px;height:28px;border:1px solid #E5E7EB;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#DC2626;text-decoration:none"
+        title="Bulletin PDF">
+        <i class="bi bi-file-pdf"></i>
+    </a>
 @endsection
 
 @section('content')
