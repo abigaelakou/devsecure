@@ -24,5 +24,9 @@
             @endforeach
         </div>
     </div>
+    <a href="{{ route('eleve.bulletin') }}"
+        style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.25rem;background:#EEF2FF;color:#4F46E5;border-radius:10px;text-decoration:none;font-size:0.875rem;font-weight:600;margin-top:1rem">
+        <i class="bi bi-file-earmark-pdf"></i> Télécharger mon bulletin PDF
+    </a>
 </div>
 @endsection
